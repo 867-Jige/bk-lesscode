@@ -137,7 +137,6 @@
             },
             // 校验表单配置
             validateForm () {
-                let isKeyValid = true
                 if (this.$store.state.nocode.formSetting.fieldsList.length < 1) {
                     this.$bkMessage({
                         theme: 'error',
@@ -145,21 +144,22 @@
                     })
                     return false
                 }
+                let message = ''
                 this.$store.state.nocode.formSetting.fieldsList.some(field => {
                     if (!/^[a-zA-Z0-9_]*$/.test(field.key)) {
-                        this.$bkMessage({
-                            theme: 'error',
-                            message: `字段【${field.name}】唯一标识需要由字母、数字、下划线组成`
-                        })
-                        isKeyValid = false
-                        return true
+                        message = `字段【${field.name}】唯一标识需要由字母、数字、下划线组成`
+                    } else if (field.key === 'title') {
+                        message = `字段【${field.name}】唯一标识title为系统内置字符，请修改后保存`
+                    } else if (field.show_type === 0) {
+                        if (!('expressions' in field.show_conditions) || field.show_conditions.expressions.some(item => item.key === '' || item.condition === '' || item.value === '')) {
+                            message = `字段【${field.name}】需要配置隐藏条件`
+                        }
                     }
-                    if (field.key === 'title') {
+                    if (message) {
                         this.$bkMessage({
                             theme: 'error',
-                            message: `字段【${field.name}】唯一标识title为系统内置字符，请修改后保存`
+                            message
                         })
-                        isKeyValid = false
                         return true
                     }
                     if (this.checkAccuracy(field)) {
@@ -171,7 +171,7 @@
                         return true
                     }
                 })
-                return isKeyValid
+                return message === ''
             },
             // 检查计算组件的默认精度值
             checkAccuracy (field) {
